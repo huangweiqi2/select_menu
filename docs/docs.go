@@ -24,8 +24,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "name",
-                        "name": "username",
+                        "description": "13112345678",
+                        "name": "phone",
                         "in": "formData",
                         "required": true
                     },
@@ -35,6 +35,36 @@ const docTemplate = `{
                         "name": "password",
                         "in": "formData",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":\"\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/random": {
+            "get": {
+                "tags": [
+                    "公共方法"
+                ],
+                "summary": "随机选择",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "number",
+                        "name": "number",
+                        "in": "query"
                     }
                 ],
                 "responses": {

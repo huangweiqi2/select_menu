@@ -16,6 +16,15 @@ func Init() *gorm.DB {
 	if err != nil {
 		log.Printf("Gorm init Error" + err.Error())
 	}
+	err = db.AutoMigrate(&User{})
+	if err != nil {
+		panic(err)
+	}
+	err = db.AutoMigrate(&Food{})
+	if err != nil {
+		panic(err)
+	}
+
 	return db
 }
 func InitRedisDB() *redis.Client {

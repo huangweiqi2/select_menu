@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"net/http"
 	"select_menu/helper"
@@ -11,25 +13,26 @@ import (
 // Login
 // @tags 公共方法
 // @Summary 用户登陆
-// @Param username formData string true "name"
+// @Param phone formData string true "13112345678"
 // @Param password formData string true "password"
 // @Success 200 {string} json "{"code":200,"data":""}"
 // @Router /login [post]
 func Login(c *gin.Context) {
-	username := c.PostForm("username")
+	phone := c.PostForm("phone")
 	password := c.PostForm("password")
-	if username == "" && password == "" {
+	if phone == "" && password == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
 			"msg":  "必填信息为空",
 		})
 	}
-	password = helper.GetMd5(password)
-	data := new(models.User)
-	err := models.DB.Where("username=? AND password=?", username, password).First(&data).Error
+
+	//fromPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	var user models.User
+	err := models.DB.Where("phone=?", phone).First(&user).Error
 	if err != nil {
 		//first方法没查到回返回ErrRecordNotFound错误
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": -1,
 				"msg":  "用户名或密码错误",
@@ -42,7 +45,22 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	token, err := helper.GenerateToken(username)
+
+	isPasswordRight := func(userPassword, password []byte) bool {
+		return bcrypt.CompareHashAndPassword(userPassword, password) == nil
+
+	}
+
+	if !isPasswordRight([]byte(user.Password), []byte(password)) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "用户名或密码错误",
+		})
+		return
+
+	}
+	var token string
+	token, err = helper.GenerateToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
@@ -79,16 +97,20 @@ func Register(c *gin.Context) {
 		})
 	}
 	//判断手机号是否存在
-	var cnt int64
-	err := models.DB.Where("phone=?", phone).Model(new(models.User)).Count(&cnt).Error
+	var existUser models.User
+	err := models.DB.Where("phone=?", phone).Model(new(models.User)).First(&existUser).Error
+
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": -1,
-			"msg":  "Get user Error" + err.Error(),
-		})
-		return
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"code": -1,
+				"msg":  "重试",
+			})
+		}
 	}
-	if cnt > 0 {
+	if existUser.ID > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
 			"msg":  "该手机号已经存在",
@@ -96,13 +118,14 @@ func Register(c *gin.Context) {
 		return
 	}
 	//插入数据
-	data := &models.User{
+	fromPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	user := &models.User{
 		Username: username,
-		Password: helper.GetMd5(password),
+		Password: string(fromPassword),
 		Email:    email,
 		Phone:    phone,
 	}
-	err = models.DB.Create(data).Error
+	err = models.DB.Create(user).Error
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
@@ -111,7 +134,8 @@ func Register(c *gin.Context) {
 		return
 	}
 	//生成token
-	token, err := helper.GenerateToken(username)
+	var token string
+	token, err = helper.GenerateToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
@@ -127,5 +151,4 @@ func Register(c *gin.Context) {
 		},
 	})
 	return
-
 }

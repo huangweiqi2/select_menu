@@ -7,7 +7,7 @@ import (
 )
 
 type UserClaims struct {
-	Username string `gorm:"column:username;type:varchar(255)" json:"username"`
+	ID uint `json:"id"`
 	jwt.StandardClaims
 }
 
@@ -21,9 +21,9 @@ func GetMd5(s string) string {
 // 生成token
 var myKey = []byte("select-menu")
 
-func GenerateToken(username string) (string, error) {
+func GenerateToken(ID uint) (string, error) {
 	userClaims := &UserClaims{
-		Username:       username,
+		ID:             ID,
 		StandardClaims: jwt.StandardClaims{},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, userClaims)

@@ -1,12 +1,10 @@
 package models
 
-import "gorm.io/gorm"
-
 type User struct {
-	gorm.Model
+	Base
 	ID       uint   `gorm:"primaryKey"`
 	Username string `gorm:"column:username;type:varchar(100)" json:"username"`
-	Password string `gorm:"column:password;type:varchar(32)" json:"password"`
+	Password string `gorm:"column:password;type:varchar(100)" json:"password"`
 	Email    string `gorm:"column:;email;type:varchar(100)" json:"email"`
 	Phone    string `gorm:"column:phone;type:varchar(20)" json:"phone"`
 }

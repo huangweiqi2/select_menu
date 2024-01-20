@@ -4,9 +4,9 @@ paths:
   /login:
     post:
       parameters:
-      - description: name
+      - description: "13112345678"
         in: formData
-        name: username
+        name: phone
         required: true
         type: string
       - description: password
@@ -20,6 +20,25 @@ paths:
           schema:
             type: string
       summary: 用户登陆
+      tags:
+      - 公共方法
+  /random:
+    get:
+      parameters:
+      - description: status
+        in: query
+        name: status
+        type: integer
+      - description: number
+        in: query
+        name: number
+        type: string
+      responses:
+        "200":
+          description: '{"code":200,"data":""}'
+          schema:
+            type: string
+      summary: 随机选择
       tags:
       - 公共方法
   /register:

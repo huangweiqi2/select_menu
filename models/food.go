@@ -2,6 +2,8 @@ package models
 
 import (
 	"select_menu/enums"
+	"select_menu/router"
+	"strings"
 )
 
 type Food struct {
@@ -13,7 +15,14 @@ type Food struct {
 	Status   enums.FoodStatus `gorm:"column:status;type:tinyint(1)" json:"status"` //1:热菜；2:凉菜；3:汤菜
 }
 
-func (table *Food) TableName() string {
+func (f Food) TableName() string {
 	return "food"
-
+}
+func (f Food) Response() router.FoodResp {
+	return router.FoodResp{
+		ID:       f.ID,
+		Name:     f.Name,
+		Material: strings.Split(strings.TrimPrefix(f.Material, "原料："), "、"),
+		Status:   f.Status.Int(),
+	}
 }

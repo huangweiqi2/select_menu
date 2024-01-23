@@ -2,7 +2,7 @@ package models
 
 import (
 	"select_menu/enums"
-	"select_menu/router"
+	"select_menu/internal/types"
 	"strings"
 )
 
@@ -18,8 +18,8 @@ type Food struct {
 func (f Food) TableName() string {
 	return "food"
 }
-func (f Food) Response() router.FoodResp {
-	return router.FoodResp{
+func (f Food) Response() types.FoodResponse {
+	return types.FoodResponse{
 		ID:       f.ID,
 		Name:     f.Name,
 		Material: strings.Split(strings.TrimPrefix(f.Material, "原料："), "、"),

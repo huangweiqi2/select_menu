@@ -25,14 +25,18 @@ paths:
   /random:
     get:
       parameters:
-      - description: status
+      - description: hot_num
         in: query
-        name: status
+        name: hot_num
         type: integer
-      - description: number
+      - description: cold_num
         in: query
-        name: number
-        type: string
+        name: cold_num
+        type: integer
+      - description: soup_num
+        in: query
+        name: soup_num
+        type: integer
       responses:
         "200":
           description: '{"code":200,"data":""}'

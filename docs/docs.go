@@ -56,14 +56,20 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "status",
-                        "name": "status",
+                        "description": "hot_num",
+                        "name": "hot_num",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "number",
-                        "name": "number",
+                        "type": "integer",
+                        "description": "cold_num",
+                        "name": "cold_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "soup_num",
+                        "name": "soup_num",
                         "in": "query"
                     }
                 ],

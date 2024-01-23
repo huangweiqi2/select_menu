@@ -1,4 +1,4 @@
-package router
+package entity
 
 type RandomResp struct {
 	Foods     []FoodResp `json:"foods"`

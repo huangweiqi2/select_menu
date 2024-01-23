@@ -1,54 +1,40 @@
-package service
+package menu
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 	"github.com/samber/lo"
-	"log"
-	"net/http"
 	"select_menu/helper"
 	"select_menu/models"
-	"select_menu/router"
+
+	"select_menu/internal/svc"
+	"select_menu/internal/types"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// Random
-// @tags 公共方法
-// @Summary 随机选择
-// @Param status query int ture "status"
-// @Param number query string ture "number"
-// @Success 200 {string} json "{"code":200,"data":""}"
-// @Router /random [get]
-func Random(c *gin.Context) {
-	var req router.RandomReq
-	if c.ShouldBind(&req) == nil {
-		log.Println("====== Only Bind By Query String ======")
-	}
-
-	if err := req.Valid(); err != nil {
-		return
-	}
-	resp, err := RandomLogic(req)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": -1,
-			"msg":  "Query mysql Error" + err.Error(),
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": resp,
-	})
+type RandomLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
 }
 
-func RandomLogic(req router.RandomReq) (resp router.RandomResp, err error) {
+func NewRandomLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RandomLogic {
+	return &RandomLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *RandomLogic) Random(req *types.RandomRequest) (resp *types.RandomResponse, err error) {
 	var foods []models.Food
 	err = models.DB.Model(new(models.Food)).Find(&foods).Error
 	if err != nil {
 		return
 	}
-	hots := make([]router.FoodResp, 0, len(foods))
-	colds := make([]router.FoodResp, 0, len(foods))
-	soups := make([]router.FoodResp, 0, len(foods))
+	hots := make([]types.FoodResponse, 0, len(foods))
+	colds := make([]types.FoodResponse, 0, len(foods))
+	soups := make([]types.FoodResponse, 0, len(foods))
 
 	for _, food := range foods {
 		if food.Status.IsHot() {
@@ -88,7 +74,7 @@ func RandomLogic(req router.RandomReq) (resp router.RandomResp, err error) {
 	//}
 	//去重
 
-	f := func(item router.FoodResp, index int) []string {
+	f := func(item types.FoodResponse, index int) []string {
 		return item.Material
 	}
 	flatMap := lo.FlatMap(resp.Foods, f)

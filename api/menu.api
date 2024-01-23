@@ -1,0 +1,28 @@
+type RandomRequest {
+	HotNum  int `form:"hot_num"`
+    ColdNum int `form:"cold_num"`
+    SoupNum int `form:"soup_num"`
+}
+
+type RandomResponse {
+	Foods     []FoodResponse `json:"foods"`
+	Materials []string   `json:"materials"` //总配料
+}
+
+type FoodResponse {
+	ID       uint     `json:"id"`
+	Name     string   `json:"name"`
+	Material []string `json:"material"`
+	Status   int      `json:"status"`
+}
+
+@server (
+    auth: jwt
+	group:  menu
+	prefix: v1/api/menu
+)
+service main-api {
+	@doc "今日菜单"
+	@handler Random
+	post /random (RandomRequest) returns (RandomResponse)
+}

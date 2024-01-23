@@ -51,6 +51,7 @@ func (l *RandomLogic) Random(req *types.RandomRequest) (resp *types.RandomRespon
 			resp.Foods = append(resp.Foods, hots...)
 		} else {
 			resp.Foods = append(resp.Foods, helper.SliceRandomN(hots, req.HotNum)...)
+			//	log.Printf()
 		}
 	}
 	if req.ColdNum > 0 {

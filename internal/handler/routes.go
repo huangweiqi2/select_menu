@@ -44,4 +44,26 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		rest.WithPrefix("/v1/api/menu"),
 	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/get-by-name",
+				Handler: menu.GetByNameHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/v1/api/menu"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/get-by-material",
+				Handler: menu.GetByMaterialHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/v1/api/menu"),
+	)
 }

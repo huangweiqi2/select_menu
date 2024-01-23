@@ -16,6 +16,16 @@ type FoodResponse {
 	Status   int      `json:"status"`
 }
 
+//通过名字获取菜名
+type GetByNameRequest {
+    Name string `form:"name"`
+}
+
+//通过配菜来匹配食物。
+type GetByMaterialRequest {
+    Material string `form:"material"`
+}
+
 @server (
     auth: jwt
 	group:  menu
@@ -25,4 +35,12 @@ service main-api {
 	@doc "今日菜单"
 	@handler Random
 	post /random (RandomRequest) returns (RandomResponse)
+
+	@doc "名字查找菜单"
+    @handler GetByName
+    get /get-by-name (GetByNameRequest) returns (RandomResponse)
+
+    @doc "材料查找菜单"
+    @handler GetByMaterial
+    get /get-by-material (GetByMaterialRequest) returns (RandomResponse)
 }

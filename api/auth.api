@@ -9,6 +9,14 @@ type JwtTokenResponse {
 	ExpireAt    int    `json:"expire_at"`
 }
 
+//用户注册
+type RegisterRequest {
+	Username    string `form:"username"`
+	Password    string `form:"password"`
+	Phone    string `form:"phone"`
+	Email string `form:"email"`
+}
+
 @server (
 	group:  auth
 	prefix: v1/api/auth
@@ -17,21 +25,8 @@ service main-api {
 	@doc "登录"
 	@handler login
 	post /login (LoginRequest) returns (JwtTokenResponse)
-}
-//用户注册
-type RegisterRequest {
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	Phone    string `json:"phone"`
-	Email string `json:"email"`
-}
 
-@server (
-	group:  auth
-	prefix: v1/api/auth
-)
-service main-api {
 	@doc "注册"
-	@handler register
-	post /register (RegisterRequest) returns (JwtTokenResponse)
+    @handler register
+   	post /register (RegisterRequest) returns (JwtTokenResponse)
 }

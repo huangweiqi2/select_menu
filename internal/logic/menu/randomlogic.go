@@ -4,10 +4,11 @@ import (
 	"context"
 	"github.com/samber/lo"
 	"select_menu/helper"
-	"select_menu/models"
-
+	"select_menu/internal/errs"
 	"select_menu/internal/svc"
 	"select_menu/internal/types"
+	"select_menu/models"
+	"strings"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -30,67 +31,59 @@ func (l *RandomLogic) Random(req *types.RandomRequest) (resp *types.RandomRespon
 	var foods []models.Food
 	err = models.DB.Model(new(models.Food)).Find(&foods).Error
 	if err != nil {
+		err = errs.QueryModelErr
 		return
 	}
-	hots := make([]types.FoodResponse, 0, len(foods))
-	colds := make([]types.FoodResponse, 0, len(foods))
-	soups := make([]types.FoodResponse, 0, len(foods))
+	hots := make([]models.Food, 0, len(foods))
+	colds := make([]models.Food, 0, len(foods))
+	soups := make([]models.Food, 0, len(foods))
 
 	for _, food := range foods {
 		if food.Status.IsHot() {
-			hots = append(hots, food.Response())
+			hots = append(hots, food)
 		} else if food.Status.IsCold() {
-			colds = append(colds, food.Response())
+			colds = append(colds, food)
 		} else {
-			soups = append(soups, food.Response())
+			soups = append(soups, food)
 		}
 	}
 
+	var resultFoods []models.Food
 	if req.HotNum > 0 {
 		if len(hots) < req.HotNum {
-			resp.Foods = append(resp.Foods, hots...)
+			resultFoods = append(resultFoods, hots...)
 		} else {
-			resp.Foods = append(resp.Foods, helper.SliceRandomN(hots, req.HotNum)...)
-			//	log.Printf()
+			resultFoods = append(resultFoods, helper.SliceRandomN(hots, req.HotNum)...)
 		}
 	}
 	if req.ColdNum > 0 {
 		if len(colds) < req.ColdNum {
-			resp.Foods = append(resp.Foods, colds...)
+			resultFoods = append(resultFoods, colds...)
 		} else {
-			resp.Foods = append(resp.Foods, helper.SliceRandomN(colds, req.ColdNum)...)
+			resultFoods = append(resultFoods, helper.SliceRandomN(colds, req.ColdNum)...)
 		}
 	}
 	if req.SoupNum > 0 {
 		if len(soups) < req.SoupNum {
-			resp.Foods = append(resp.Foods, soups...)
+			resultFoods = append(resultFoods, soups...)
 		} else {
-			resp.Foods = append(resp.Foods, helper.SliceRandomN(soups, req.SoupNum)...)
+			resultFoods = append(resultFoods, helper.SliceRandomN(soups, req.SoupNum)...)
 		}
 	}
 
-	//materials := make([]string, 0)
-	//for _, food := range resp.Foods {
-	//	materials = append(materials, food.Material...)
-	//}
-	//去重
-
-	f := func(item types.FoodResponse, index int) []string {
-		return item.Material
+	resp = &types.RandomResponse{}
+	//返回配料字符串
+	f := func(item models.Food, index int) []string {
+		return strings.Split(strings.TrimPrefix(item.Material, "原料："), "、")
 	}
-	flatMap := lo.FlatMap(resp.Foods, f)
-
+	//flatMap将slice中每个元素转换成另一个slice，最后合并成一个slice
+	flatMap := lo.FlatMap(resultFoods, f)
+	//uniq函数可以去重
 	resp.Materials = lo.Uniq(flatMap)
-	//m := make(map[string]struct{}, len(materials))
-	//for _, material := range materials {
-	//	if _, ok := m[material]; ok {
-	//		continue
-	//	}
-	//
-	//	m[material] = struct{}{}
-	//	resp.Materials = append(resp.Materials, material)
-	//
-	//}
+
+	for _, food := range resultFoods {
+		resp.Foods = append(resp.Foods, food.Response())
+	}
 
 	return
 }

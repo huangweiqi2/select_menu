@@ -2,9 +2,7 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"select_menu/helper"
 	"select_menu/internal/errs"
 	"select_menu/models"
@@ -35,16 +33,14 @@ func (l *RegisterLogic) Register(req *types.RegisterRequest) (resp *types.JwtTok
 		return
 	}
 	//判断手机号是否存在
-	var existUser models.User
-	err = models.DB.Where("phone=?", req.Phone).Model(new(models.User)).First(&existUser).Error
+	var cnt int64
+	err = models.DB.Where("phone=?", req.Phone).Model(new(models.User)).Count(&cnt).Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = nil
-		}
+		err = errs.CreatModelErr
 		return
 	}
-	if existUser.ID > 0 {
+	if cnt > 0 {
 		err = errs.PhoneExist
 		return
 	}

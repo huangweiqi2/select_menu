@@ -73,6 +73,58 @@
         ]
       }
     },
+    "v1/api/menu/get-by-material": {
+      "get": {
+        "summary": "材料查找菜单",
+        "operationId": "GetByMaterial",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RandomResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "material",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "requestBody": {},
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "v1/api/menu/get-by-name": {
+      "get": {
+        "summary": "名字查找菜单",
+        "operationId": "GetByName",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RandomResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "requestBody": {},
+        "tags": [
+          "menu"
+        ]
+      }
+    },
     "v1/api/menu/random": {
       "post": {
         "summary": "今日菜单",
@@ -129,6 +181,30 @@
         "name",
         "material",
         "status"
+      ]
+    },
+    "GetByMaterialRequest": {
+      "type": "object",
+      "properties": {
+        "material": {
+          "type": "string"
+        }
+      },
+      "title": "GetByMaterialRequest",
+      "required": [
+        "material"
+      ]
+    },
+    "GetByNameRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "title": "GetByNameRequest",
+      "required": [
+        "name"
       ]
     },
     "JwtTokenResponse": {

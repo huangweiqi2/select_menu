@@ -12,10 +12,10 @@ type JwtTokenResponse struct {
 }
 
 type RegisterRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Phone    string `json:"phone"`
-	Email    string `json:"email"`
+	Username string `form:"username"`
+	Password string `form:"password"`
+	Phone    string `form:"phone"`
+	Email    string `form:"email"`
 }
 
 type RandomRequest struct {
@@ -34,4 +34,12 @@ type FoodResponse struct {
 	Name     string   `json:"name"`
 	Material []string `json:"material"`
 	Status   int      `json:"status"`
+}
+
+type GetByNameRequest struct {
+	Name string `form:"name"`
+}
+
+type GetByMaterialRequest struct {
+	Material string `form:"material"`
 }

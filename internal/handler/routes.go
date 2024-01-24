@@ -19,12 +19,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/login",
 				Handler: auth.LoginHandler(serverCtx),
 			},
-		},
-		rest.WithPrefix("/v1/api/auth"),
-	)
-
-	server.AddRoutes(
-		[]rest.Route{
 			{
 				Method:  http.MethodPost,
 				Path:    "/register",
@@ -41,23 +35,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/random",
 				Handler: menu.RandomHandler(serverCtx),
 			},
-		},
-		rest.WithPrefix("/v1/api/menu"),
-	)
-
-	server.AddRoutes(
-		[]rest.Route{
 			{
 				Method:  http.MethodGet,
 				Path:    "/get-by-name",
 				Handler: menu.GetByNameHandler(serverCtx),
 			},
-		},
-		rest.WithPrefix("/v1/api/menu"),
-	)
-
-	server.AddRoutes(
-		[]rest.Route{
 			{
 				Method:  http.MethodGet,
 				Path:    "/get-by-material",

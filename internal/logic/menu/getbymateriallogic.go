@@ -82,19 +82,3 @@ func MatchRate2(materialMap map[string]struct{}, b []string) (rate int) {
 	rate = int((float64(count) / float64(len(b))) * 100)
 	return
 }
-
-// 排序函数
-func sortMap(m map[string]int, n int) (resMap map[int]string) {
-	invMap := make(map[int]string, len(m))
-	values := make([]int, 0)
-	for k, v := range m {
-		invMap[v] = k
-		values = append(values, v)
-	}
-	//int切片正序
-	sort.Ints(values)
-	for i, value := range values[:n] {
-		resMap[i] = invMap[value]
-	}
-	return
-}

@@ -2,6 +2,7 @@ package menu
 
 import (
 	"context"
+	"github.com/samber/lo"
 	"select_menu/internal/errs"
 	"select_menu/internal/svc"
 	"select_menu/internal/types"
@@ -17,6 +18,10 @@ type GetByMaterialLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
+type FoodRate struct {
+	Food models.Food
+	rate int
+}
 
 func NewGetByMaterialLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetByMaterialLogic {
 	return &GetByMaterialLogic{
@@ -28,6 +33,9 @@ func NewGetByMaterialLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Get
 
 func (l *GetByMaterialLogic) GetByMaterial(req *types.GetByMaterialRequest) (resp *types.RandomResponse, err error) {
 	material := strings.Split(req.Material, "、")
+	materialMap := lo.SliceToMap(material, func(item string) (string, struct{}) {
+		return item, struct{}{}
+	})
 	//读取数据
 	foods := make([]models.Food, 0)
 	err = models.DB.Model(new(models.Food)).Find(&foods).Error
@@ -35,35 +43,43 @@ func (l *GetByMaterialLogic) GetByMaterial(req *types.GetByMaterialRequest) (res
 		err = errs.QueryModelErr
 	}
 	//计算配对率
-	matchMap := make(map[string]int, len(foods))
+	foodRate := make([]FoodRate, len(foods))
 	for _, food := range foods {
-		matchMap[food.Name] = MatchRate(material, food.Response().Material)
+		foodRate = append(foodRate, FoodRate{
+			Food: food,
+			rate: MatchRate2(materialMap, food.Response().Material),
+		})
 	}
 	//排序
-	nameMap := sortMap(matchMap, 3)
+	sort.Slice(foodRate, func(i, j int) bool {
+		return foodRate[i].rate < foodRate[j].rate
+	})
 	//返回结果
-	resp = &types.RandomResponse{}
-	for _, v := range nameMap {
-		for _, food := range foods {
-			if food.Name == v {
-				resp.Foods = append(resp.Foods, food.Response())
-			}
-		}
+	if len(foodRate) > 5 {
+		foodRate = foodRate[:5:5]
 	}
+	resp = &types.RandomResponse{}
+
+	for _, rate := range foodRate {
+		response := rate.Food.Response()
+		resp.Foods = append(resp.Foods, response)
+		resp.Materials = append(resp.Materials, response.Material...)
+	}
+
+	resp.Materials = lo.Uniq(resp.Materials)
+
 	return
 }
 
-// 计算配对了率
-func MatchRate(a, b []string) (rate int) {
-	var n = len(a) + len(b)
-	m := make(map[string]struct{}, n)
-	for _, v := range a {
-		m[v] = struct{}{}
-	}
+func MatchRate2(materialMap map[string]struct{}, b []string) (rate int) {
+	var count int
 	for _, v := range b {
-		m[v] = struct{}{}
+		if _, ok := materialMap[v]; ok {
+			count++
+		}
 	}
-	rate = int((float64(len(m)) / float64(n)) * 100)
+
+	rate = int((float64(count) / float64(len(b))) * 100)
 	return
 }
 

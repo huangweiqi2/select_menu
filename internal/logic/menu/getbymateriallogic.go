@@ -2,6 +2,7 @@ package menu
 
 import (
 	"context"
+	"fmt"
 	"github.com/samber/lo"
 	"select_menu/internal/errs"
 	"select_menu/internal/svc"
@@ -9,6 +10,7 @@ import (
 	"select_menu/models"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -20,7 +22,7 @@ type GetByMaterialLogic struct {
 }
 type FoodRate struct {
 	Food models.Food
-	rate int
+	Rate int
 }
 
 func NewGetByMaterialLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetByMaterialLogic {
@@ -42,25 +44,74 @@ func (l *GetByMaterialLogic) GetByMaterial(req *types.GetByMaterialRequest) (res
 	if err != nil {
 		err = errs.QueryModelErr
 	}
-	//计算配对率
-	foodRate := make([]FoodRate, len(foods))
-	for _, food := range foods {
-		foodRate = append(foodRate, FoodRate{
-			Food: food,
-			rate: MatchRate2(materialMap, food.Response().Material),
-		})
+
+	foodChan := make(chan models.Food)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(wg *sync.WaitGroup, foodChan chan<- models.Food, foods []models.Food) {
+		defer func() {
+			fmt.Println("close foodChan")
+			close(foodChan)
+			wg.Done()
+		}()
+		for _, food := range foods {
+			foodChan <- food
+		}
+	}(&wg, foodChan, foods)
+
+	f := func(wg *sync.WaitGroup, foodChan <-chan models.Food, materialMap map[string]struct{}) (foodRateChan chan FoodRate) {
+		foodRateChan = make(chan FoodRate)
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, foodChan <-chan models.Food, foodRateChan chan<- FoodRate, materialMap map[string]struct{}) {
+
+			defer func() {
+				fmt.Println("close foodRateChan")
+				close(foodRateChan)
+				wg.Done()
+			}()
+			for food := range foodChan {
+				foodRateChan <- FoodRate{
+					Rate: MatchRate2(materialMap, food.Response().Material),
+					Food: food,
+				}
+			}
+		}(wg, foodChan, foodRateChan, materialMap)
+		return foodRateChan
 	}
+
+	chans := make([]<-chan FoodRate, 0, 3)
+	for i := 0; i < 3; i++ {
+		chans = append(chans, f(&wg, foodChan, materialMap))
+	}
+
+	foodRates := make([]FoodRate, len(foods))
+	for rate := range merge(chans...) {
+		fmt.Println("rate:", rate.Food.ID, rate.Food.Name, rate.Rate)
+		foodRates = append(foodRates, rate)
+	}
+	wg.Wait()
+
+	fmt.Println(foodRates)
+
+	//foodRates := make([]FoodRate, len(foods))
+	//for _, food := range foods {
+	//	foodRates = append(foodRates, FoodRate{
+	//		Food: food,
+	//		rate: MatchRate2(materialMap, food.Response().Material),
+	//	})
+	//}
 	//排序
-	sort.Slice(foodRate, func(i, j int) bool {
-		return foodRate[i].rate < foodRate[j].rate
+	sort.Slice(foodRates, func(i, j int) bool {
+		return foodRates[i].Rate < foodRates[j].Rate
 	})
 	//返回结果
-	if len(foodRate) > 5 {
-		foodRate = foodRate[:5:5]
+	if len(foodRates) > 5 {
+		foodRates = foodRates[:5:5]
 	}
 	resp = &types.RandomResponse{}
 
-	for _, rate := range foodRate {
+	for _, rate := range foodRates {
 		response := rate.Food.Response()
 		resp.Foods = append(resp.Foods, response)
 		resp.Materials = append(resp.Materials, response.Material...)
@@ -78,7 +129,31 @@ func MatchRate2(materialMap map[string]struct{}, b []string) (rate int) {
 			count++
 		}
 	}
+	fmt.Println("count:", count, len(b))
 
 	rate = int((float64(count) / float64(len(b))) * 100)
 	return
+}
+
+func merge(inCh ...<-chan FoodRate) <-chan FoodRate {
+	outCh := make(chan FoodRate, 2)
+	var wg sync.WaitGroup
+	for _, ch := range inCh {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, in <-chan FoodRate) {
+			defer wg.Done()
+			for val := range in {
+				outCh <- val
+			}
+		}(&wg, ch)
+	}
+
+	// 重要注意，wg.Wait() 一定要在goroutine里运行，否则会引起deadlock
+	go func() {
+		wg.Wait()
+		fmt.Println("close(outCh)")
+		close(outCh)
+	}()
+
+	return outCh
 }

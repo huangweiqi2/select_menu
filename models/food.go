@@ -8,7 +8,6 @@ import (
 
 type Food struct {
 	Base
-	ID       uint             `gorm:"primaryKey"`
 	Name     string           `gorm:"size:100;index:idx_name" json:"name"`
 	Material string           `gorm:"size:255" json:"material"`
 	Url      string           `gorm:"size:255" json:"url"`

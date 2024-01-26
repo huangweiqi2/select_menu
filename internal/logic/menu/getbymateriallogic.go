@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -85,14 +86,39 @@ func (l *GetByMaterialLogic) GetByMaterial(req *types.GetByMaterialRequest) (res
 		chans = append(chans, f(&wg, foodChan, materialMap))
 	}
 
-	foodRates := make([]FoodRate, len(foods))
-	for rate := range merge(chans...) {
-		fmt.Println("rate:", rate.Food.ID, rate.Food.Name, rate.Rate)
-		foodRates = append(foodRates, rate)
-	}
-	wg.Wait()
+	foodRates := make([]FoodRate, 0, len(foods))
 
-	fmt.Println(foodRates)
+	for {
+		select {
+		case foodRate, ok := <-chans[0]:
+			if !ok {
+				fmt.Println("chan1 close")
+				chans[0] = nil
+			}
+			foodRates = append(foodRates, foodRate)
+		case foodRate, ok := <-chans[1]:
+			if !ok {
+				fmt.Println("chan2 close")
+				chans[1] = nil
+			}
+			foodRates = append(foodRates, foodRate)
+		case foodRate, ok := <-chans[2]:
+			if !ok {
+				fmt.Println("chan3 close")
+				chans[2] = nil
+			}
+			foodRates = append(foodRates, foodRate)
+		case <-time.After(time.Second * 2):
+			break
+		}
+		if chans[0] == nil && chans[1] == nil && chans[2] == nil {
+			break
+
+		}
+
+	}
+
+	wg.Wait()
 
 	//foodRates := make([]FoodRate, len(foods))
 	//for _, food := range foods {
@@ -103,7 +129,7 @@ func (l *GetByMaterialLogic) GetByMaterial(req *types.GetByMaterialRequest) (res
 	//}
 	//排序
 	sort.Slice(foodRates, func(i, j int) bool {
-		return foodRates[i].Rate < foodRates[j].Rate
+		return foodRates[i].Rate > foodRates[j].Rate
 	})
 	//返回结果
 	if len(foodRates) > 5 {
@@ -129,7 +155,6 @@ func MatchRate2(materialMap map[string]struct{}, b []string) (rate int) {
 			count++
 		}
 	}
-	fmt.Println("count:", count, len(b))
 
 	rate = int((float64(count) / float64(len(b))) * 100)
 	return
